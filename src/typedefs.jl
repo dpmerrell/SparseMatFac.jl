@@ -1,0 +1,3 @@
+
+CuSparseMatrixCSC = CUDA.CUSPARSE.CuSparseMatrixCSC
+

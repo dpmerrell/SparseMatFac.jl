@@ -9,5 +9,6 @@ include("noise_models.jl")
 include("model_core.jl")
 include("viewable.jl")
 include("fit.jl")
+include("impute.jl")
 
 end # module

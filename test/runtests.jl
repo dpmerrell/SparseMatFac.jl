@@ -63,12 +63,11 @@ function model_fit_tests()
 
     M = 10
     N = 20
-    K = 1
+    K = 2
     
     I = rand(1:M, N)
     J = collect(1:N)
     V = rand([0.0, 1.0], N)
-
 
     @testset "CPU model fit tests" begin
         model = SparseMatFacModel(M, N, K; noise_model="bernoulli", 
@@ -101,6 +100,31 @@ function model_fit_tests()
 end
 
 
+function impute_tests()
+    
+    M = 10
+    N = 20
+    K = 1
+    
+    I = rand(1:M, N)
+    J = collect(1:N)
+    V = rand([0.0, 1.0], N)
+
+    @testset "Imputation tests" begin
+        model = SparseMatFacModel(M, N, K; noise_model="bernoulli")
+        
+        impute_I = [4, 8, 2]
+        impute_J = [13, 17, 3]
+
+        impute_V = impute(model, impute_I, impute_J)
+
+        @test all((impute_V .>= 0) .& (impute_V .<= 1))
+        @test length(impute_V) == length(impute_I)
+    end
+
+end
+
+
 function model_io_tests()
     
     M = 10
@@ -110,11 +134,12 @@ function model_io_tests()
     @testset "Model IO tests" begin
         model = SparseMatFacModel(M, N, K; noise_model="bernoulli", 
                                            Y_reg=y->0.1*sum(y.*y))
-        save_model(model, "test.hdf")
-        recovered_model = load_model("test.hdf")
+        save_model(model, "test.bson")
+        recovered_model = load_model("test.bson")
 
         @test isapprox(recovered_model.X, model.X)
-        @test isapprox(recovered_model.Y, model.Y) 
+        @test isapprox(recovered_model.Y, model.Y)
+        rm("test.bson") 
     end
 end
 
@@ -124,6 +149,7 @@ function main()
     model_assembly_tests()
     model_core_tests()
     model_fit_tests()
+    impute_tests()
     model_io_tests()
 
 end

@@ -1,83 +1,78 @@
 
 
 ####################################
-# LINK FUNCTIONS
+# INVERSE LINK FUNCTIONS
 ####################################
 
-function quad_link(Z::AbstractArray)
+function normal_invlink(Z::AbstractArray)
     return Z
 end
 
 
-function logistic_link(Z::AbstractArray)
+function bernoulli_invlink(Z::AbstractArray)
     # We shrink the value slightly toward 0.5
     # in order to prevent NaNs.
     return 0.5f0 .+ (0.9999f0 .*(1 ./ (1 .+ exp.(-Z)) .- 0.5))
 end
 
 
-function ChainRules.rrule(::typeof(logistic_link), Z)
-    A = logistic_link(Z)
+function ChainRules.rrule(::typeof(bernoulli_invlink), Z)
+    A = bernoulli_invlink(Z)
 
-    function logistic_link_pullback(A_bar)
+    function bernoulli_invlink_pullback(A_bar)
         return ChainRules.NoTangent(), A_bar .* (A .* (1 .- A))
     end
-    return A, logistic_link_pullback
+    return A, bernoulli_invlink_pullback
 end
 
 
-function poisson_link(Z::AbstractArray)
+function poisson_invlink(Z::AbstractArray)
     return exp.(Z)
 end
 
 
-function noloss_link(Z::AbstractArray)
-    return Z
-end
 
-
-LINK_FUNCTION_MAP = Dict("normal"=>quad_link,
-                         "logistic"=>logistic_link,
-                         "poisson"=>poisson_link,
-                         "noloss"=>noloss_link,
-                        )
+INVLINK_FUNCTION_MAP = Dict("normal"=>normal_invlink,
+                            "bernoulli"=>bernoulli_invlink,
+                            "poisson"=>poisson_invlink,
+                           )
 
 
 ####################################
 # LOSS FUNCTIONS
 ####################################
 
-function quad_loss(A::AbstractArray, D::AbstractArray) 
+function normal_loss(A::AbstractArray, D::AbstractArray) 
     return 0.5f0.*(A .- D).^2
 end
 
-function ChainRules.rrule(::typeof(quad_loss), A, D) 
+function ChainRules.rrule(::typeof(normal_loss), A, D) 
    
     diff = A .- D
 
-    function quad_loss_pullback(loss_bar)
+    function normal_loss_pullback(loss_bar)
         return ChainRules.NoTangent(), loss_bar.*diff, ChainRules.NoTangent()
     end
 
-    return 0.5f0.*(diff.^2), quad_loss_pullback 
+    return 0.5f0.*(diff.^2), normal_loss_pullback 
 end
 
 
-function logistic_loss(A::AbstractArray, D::AbstractArray)
+function bernoulli_loss(A::AbstractArray, D::AbstractArray)
     loss = -D .* log.(A) .- (1 .- D) .* log.( 1 .- A)
     return loss
 end
 
 
-function ChainRules.rrule(::typeof(logistic_loss), A, D)
+function ChainRules.rrule(::typeof(bernoulli_loss), A, D)
     
-    loss = logistic_loss(A,D)
+    loss = bernoulli_loss(A,D)
 
-    function logistic_loss_pullback(loss_bar)
+    function bernoulli_loss_pullback(loss_bar)
         A_bar = loss_bar .* (-D./A .+ (1 .- D)./(1 .- A))
         return ChainRules.NoTangent(), A_bar, ChainRules.NoTangent()
     end
-    return loss, logistic_loss_pullback 
+    return loss, bernoulli_loss_pullback 
 end
 
 
@@ -99,23 +94,8 @@ function ChainRules.rrule(::typeof(poisson_loss), A, D)
 end
 
 
-function noloss_loss(A::AbstractArray, D::AbstractArray)
-    return zero(A)
-end
-
-
-function ChainRules.rrule(::typeof(noloss_loss), A, D)
-    
-    function noloss_loss_pullback(loss_bar)
-        return ChainRules.NoTangent(), zero(loss_bar), ChainRules.NoTangent()
-    end
-
-    return zero(A), noloss_loss_pullback 
-end
-
-LOSS_FUNCTION_MAP = Dict("normal"=>quad_loss,
-                         "logistic"=>logistic_loss,
+LOSS_FUNCTION_MAP = Dict("normal"=>normal_loss,
+                         "bernoulli"=>bernoulli_loss,
                          "poisson"=>poisson_loss,
-                         "noloss"=>noloss_loss
                          )
 

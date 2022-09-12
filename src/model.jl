@@ -1,61 +1,91 @@
 
-export SparseMatFacModel
+export SparseMatFacModel, save_model, load_model
 
 mutable struct SparseMatFacModel
 
     X::AbstractMatrix
     Y::AbstractMatrix
 
-    X_b::AbstractVector
-    Y_b::AbstractVector
+    row_transform::Any  # These transforms may be functions
+    col_transform::Any  # or callable structs (with trainable parameters)
+    noise_model::String
 
-    X_reg::Vector{<:AbstractMatrix}
-    Y_reg::Vector{<:AbstractMatrix}
+    X_reg::Any                   # These regularizers may be functions
+    Y_reg::Any                   # or callable structs (with trainable
+    row_transform_reg::Any       # parameters)
+    col_transform_reg::Any
 
-    X_b_reg::AbstractMatrix
-    Y_b_reg::AbstractMatrix
-
-    loss::String
+    lambda_X::Number             # Regularizer weights
+    lambda_Y::Number
+    lambda_row::Number
+    lambda_col::Number
 end
 
 
-function SparseMatFacModel(X_reg::Vector{<:AbstractMatrix}, 
-                           Y_reg::Vector{<:AbstractMatrix},
-                           X_b_reg::AbstractMatrix,
-                           Y_b_reg::AbstractMatrix;
-                           loss::String="normal")
+"""
+    SparseMatFacModel(M, N, K; row_transform=identity,
+                               col_transform=identity,
+                               noise_model::String="normal",
+                               X_reg=x->0.0, 
+                               Y_reg=x->0.0,
+                               row_transform_reg=x->0.0,
+                               col_transform_reg=x->0.0,
+                               lambda_X=1.0,
+                               lambda_Y=1.0,
+                               lambda_row=1.0,
+                               lambda_col=1.0)
 
-    K = length(X_reg)
-    @assert K == length(Y_reg)
+    Build a SparseMatFacModel for an M x N dataset, with K-dimensional factors.
+    Supply row- and column-transforms, noise model, regularizers, and 
+    regularizer weights as keyword arguments.
+"""
+function SparseMatFacModel(M::Integer, N::Integer, K::Integer;
+                           row_transform=identity,
+                           col_transform=identity,
+                           noise_model::String="normal",
+                           X_reg=x->0.0, 
+                           Y_reg=x->0.0,
+                           row_transform_reg=x->0.0,
+                           col_transform_reg=x->0.0,
+                           lambda_X=1.0,
+                           lambda_Y=1.0,
+                           lambda_row=1.0,
+                           lambda_col=1.0)
 
-    M = size(X_reg[1], 1)
-    N = size(Y_reg[1], 1)
+    X = randn(K,M) ./ sqrt(K) / 10.0
+    Y = randn(K,N) ./ sqrt(K) / 10.0
 
-    X = CUDA.randn(Float32,K,M) ./ Float32(sqrt(K)) ./ 1000.0f0
-    X_b = CUDA.zeros(Float32,M)
-    Y = CUDA.randn(Float32,K,N) ./ Float32(sqrt(K)) ./ 1000.f0
-    Y_b = CUDA.zeros(Float32,N)
+    row_transform = make_viewable(row_transform)
+    col_transform = make_viewable(col_transform)
 
-    return SparseMatFacModel(X, Y, X_b, Y_b, 
-                             X_reg, Y_reg, X_b_reg, Y_b_reg,
-                             loss)
+    return SparseMatFacModel(X, Y, row_transform, col_transform, noise_model,
+                                   X_reg, Y_reg, 
+                                   row_transform_reg, col_transform_reg,
+                                   lambda_X, lambda_Y, lambda_row, lambda_col)
 end
 
 
-function SparseMatFacModel(X_reg::AbstractMatrix, 
-                           Y_reg::AbstractMatrix, 
-                           K::Integer; 
-                           loss::String="normal")
 
-    X_reg_v = fill(deepcopy(X_reg), K)
-    Y_reg_v = fill(deepcopy(Y_reg), K)
+################################################
+# Model file I/O
 
-    X_b_reg = deepcopy(X_reg)
-    Y_b_reg = deepcopy(Y_reg)
+"""
+    save_model(model, filename)
 
-    return SparseMatFacModel(X_reg_v, Y_reg_v, X_b_reg, Y_b_reg;
-                             loss=loss)
+Save `model` to a BSON file located at `filename`.
+"""
+function save_model(model, filename)
+    BSON.@save filename model
 end
 
+"""
+    load_model(filename)
+
+load a model from the BSON located at `filename`.
+"""
+function load_model(filename)
+    d = BSON.load(filename, @__MODULE__)
+    return d[:model]
+end
 
 

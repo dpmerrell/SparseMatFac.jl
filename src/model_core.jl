@@ -17,5 +17,16 @@ function neg_log_likelihood(X_view, Y_view,
     return loss
 end
 
+"""
+    Whenever you implement a custom row- or column- transformation
+    for a SparseMatFacModel, you must implement a `collect_view_gradients`
+    function for the transformation.
 
+    The function must (1) receive the gradient for the _view_ of a layer
+    and (2) correctly map the _view's_ gradient to a gradient for the 
+    original layer.
+"""
+function collect_view_gradients(layer_view, view_grads)
+    error(string("collect_view_gradients(...) not implemented for ", typeof(layer_view)))
+end
 

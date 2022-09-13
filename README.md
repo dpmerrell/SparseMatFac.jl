@@ -12,4 +12,4 @@ This is potentially useful for a variety of situations where you want to model p
 
 See [Bracketology.jl](https://github.com/dpmerrell/Bracketology.jl) for example usage of this package in a sports analytics application.
 
-It's intended to have a very similar design to [MatFac.jl](https://github.com/dpmerrell/MatFac.jl).
+SparseMatFac.jl is intended to be the "sparse analog" of [MatFac.jl](https://github.com/dpmerrell/MatFac.jl).

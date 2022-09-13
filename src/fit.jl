@@ -69,8 +69,8 @@ function fit!(model::SparseMatFacModel,
         # Map the observation-wise gradients on to X and Y
         X_grad .= transpose(nz_to_i * transpose(X_v_grad))
         Y_grad .= transpose(nz_to_j * transpose(Y_v_grad))
-        row_trans_grad = collect_view_gradients(model.row_transform, row_trans_v_grad)
-        col_trans_grad = collect_view_gradients(model.col_transform, col_trans_v_grad)
+        row_trans_grad = collect_view_gradients(row_transform_view, row_trans_v_grad)
+        col_trans_grad = collect_view_gradients(col_transform_view, col_trans_v_grad)
 
         # Compute regularization gradients w.r.t. X and Y
         X_reg_loss, (X_reg_grad,) = withgradient(curried_X_prior, model.X)

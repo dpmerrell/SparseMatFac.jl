@@ -48,10 +48,10 @@ function fit!(model::SparseMatFacModel,
                                                                 col_trans_view,
                                                                 V, invlink_fn, loss_fn)
 
-    curried_X_prior = X -> model.X_reg(X)
-    curried_Y_prior = Y -> model.Y_reg(Y)
-    curried_rowtrans_prior = rt -> model.row_transform_reg(rt)
-    curried_coltrans_prior = ct -> model.col_transform_reg(ct)
+    curried_X_prior = X -> model.lambda_X * model.X_reg(X)
+    curried_Y_prior = Y -> model.lambda_Y * model.Y_reg(Y)
+    curried_rowtrans_prior = rt -> model.lambda_row * model.row_transform_reg(rt)
+    curried_coltrans_prior = ct -> model.lambda_col * model.col_transform_reg(ct)
 
     prev_loss = Inf
     tol_iter = 0

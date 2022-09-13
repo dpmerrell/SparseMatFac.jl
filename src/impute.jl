@@ -12,7 +12,7 @@ function impute(model::SparseMatFacModel, I::AbstractVector{Int}, J::AbstractVec
     Y_view = view(model.Y, :, J)
 
     row_trans_view = view(model.row_transform, I)
-    col_trans_view = view(model.col_transform, I)
+    col_trans_view = view(model.col_transform, J)
 
     invlink_fn = INVLINK_FUNCTION_MAP[model.noise_model]
 

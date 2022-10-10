@@ -6,7 +6,7 @@ import ScikitLearnBase: fit!
 function fit!(model::SparseMatFacModel, 
               I::AbstractVector{Int}, J::AbstractVector{Int}, V::AbstractVector{<:Number};
               lr=0.01, opt=nothing, max_iter=1000, abs_tol=1e-12, rel_tol=1e-9, max_tol_iter=3,
-              verbosity=1)
+              verbosity=1, print_iter=10)
 
     K = size(model.X, 1)
     M = size(model.X, 2)
@@ -94,7 +94,9 @@ function fit!(model::SparseMatFacModel,
         loss = (likelihood_loss + X_reg_loss + Y_reg_loss
                                 + row_trans_reg_loss + col_trans_reg_loss)
         cur_time = time()
-        verbose_print("(", iter, ")\tLOSS: ", round(loss, digits=6), "\tElapsed time: ", round(Int, cur_time - start_time), "s\n"; verbosity=verbosity)
+        if iter % print_iter == 0
+            verbose_print("(", iter, ")\tLOSS: ", round(loss, digits=6), "\tElapsed time: ", round(Int, cur_time - start_time), "s\n"; verbosity=verbosity)
+        end
 
         loss_delta = loss - prev_loss
         if (loss_delta > -abs_tol)
